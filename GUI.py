@@ -8,7 +8,7 @@ import random as r
 
 g_done = False
 
-blacklisted = ["Badges.txt", "Items.txt"]
+blacklisted = ["Badges.txt", "Items.txt", "InventoryGUI.txt"]
 
 rootdir = ""
 newfolderpath = ""
