@@ -1,6 +1,6 @@
 from tkinter import Frame, Label, Tk, Checkbutton, IntVar, Button, Entry, StringVar
 from tkinter import filedialog as fd
-import os, shutil
+import os, shutil, json
 from io import StringIO
 from html.parser import HTMLParser
 from colorutils import Color
@@ -75,8 +75,6 @@ class MLStripper(HTMLParser):
 
 def strip_tags(html):
     """
-    
-
     Parameters
     ----------
     html : str
@@ -115,8 +113,7 @@ def rand_formatting(string, args):
     if _colour: string = get_rand_colour() + string + "</color>"
 
     if  round(r.random()) and _bold: string = "<b>" + string + "</b>"
-    if  round(r.random()) and _italics: string = "<i>" + string + "</i>"
-    
+    if  round(r.random()) and _italics: string = "<i>" + string + "</i>"  
     if round(r.random()) and _size: string = "<size={}>".format(r.randint(_sizeL, _sizeU)) + string + "</size>"
  
     return string
@@ -128,12 +125,10 @@ def Generate():
         args = [app.colour.get(), app.bold.get(), app.italics.get(), app.caps.get(), app.size.get(), int(app.lowersize.get()), int(app.uppersize.get())]
         if rootdir and app.foldername.get():
             segs = rootdir.split("/")[0:-1]
-            # print(segs)
             newfolderpath = ""
             for c in segs:
                 newfolderpath += c + "/"
             newfolderpath += app.foldername.get()
-            # print(newfolderpath)
             try:
                 shutil.rmtree(newfolderpath)
             except FileNotFoundError:
@@ -186,7 +181,20 @@ def Generate():
                         with open(newfolderpath + "/" + filename, "w") as _newfile:
                             _newfile.write(newfile)
                             _newfile.close()
-    
+                
+                if filename == "manifest.json":
+                    print("json file found")
+                    newfile = ""
+                    with open(rootdir + "/" + filename, "r") as file:
+                        content = file.read()
+                        file.close()
+                        _jsoncontent = (json.loads(content))
+                        _jsoncontent["Name"] = app.foldername.get()
+                        _jsoncontent["Authors"].append("Scordi8's Translation Modifier")
+                        with open(newfolderpath + "/" + filename, "w") as _newfile:
+                            _newfile.write(json.dumps(_jsoncontent))
+                            _newfile.close()
+                
                 if filename in blacklisted:
                     with open(rootdir + "/" + filename, "r") as file:
                         content = file.read()
@@ -222,7 +230,6 @@ def on_closing():
     g_done = True
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
-
 
 
 while not g_done:
