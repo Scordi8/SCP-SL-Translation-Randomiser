@@ -7,9 +7,7 @@ from colorutils import Color
 import random as r
 
 g_done = False
-
 blacklisted = ["Badges.txt", "Items.txt", "InventoryGUI.txt"]
-
 rootdir = ""
 newfolderpath = ""
 cycle = 0
@@ -118,7 +116,6 @@ def get_cycle_colour():
 
 def rand_formatting(string, args):
     _bold, _italics, _caps, _size, _sizeL, _sizeU = args[0], args[1], args[2], args[3], args[4], args[5]
-
     if len(args[6]) >=1: _colmode =  args[6][0]
     else: _colmode = 0
     
@@ -135,7 +132,6 @@ def rand_formatting(string, args):
  
     return string
 
-       
 def Generate():
     global newfolderpath, rootdir
     try:
@@ -160,7 +156,6 @@ def Generate():
                         content = strip_tags(content)
                         
                         special_characters = ["\\", "[","]", "(", ")"]
-                        
                         special_curly = False
                         special_square = False
                         special_next = False
@@ -222,7 +217,6 @@ def Generate():
         print(err)
         app.error.set(err)
     
-   
 def pickfoldersource():
     global rootdir
     rootdir = (fd.askdirectory(title="Select source Folder"))
@@ -246,12 +240,9 @@ def opensettings():
     Label (ccs, text="Saturation").grid(row=_row, column=1)
     Label (ccs, text="Value").grid(row=_row, column=2)
     
-    
 root = Tk()
 root.wm_title('SCP:SL Translation modifier')
 app = App(root)
-
-
 
 def on_closing():
     root.destroy()
@@ -259,7 +250,6 @@ def on_closing():
     g_done = True
 
 root.protocol("WM_DELETE_WINDOW", on_closing)
-
 
 while not g_done:
     try:
