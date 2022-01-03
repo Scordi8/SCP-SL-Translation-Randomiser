@@ -1,4 +1,4 @@
-from tkinter import Frame, Label, Tk, Checkbutton, IntVar, Button, Entry, StringVar
+from tkinter import Frame, Label, Tk, Checkbutton, IntVar, Button, Entry, StringVar, Listbox, Toplevel, Scale, DoubleVar
 from tkinter import filedialog as fd
 import os, shutil, json
 from io import StringIO
@@ -12,13 +12,13 @@ blacklisted = ["Badges.txt", "Items.txt", "InventoryGUI.txt"]
 
 rootdir = ""
 newfolderpath = ""
+cycle = 0
 
 class App:
     def __init__(self, master):
         frame = Frame(master)
         frame.pack()
         
-        self.colour = IntVar()
         self.italics = IntVar()
         self.bold = IntVar()
         self.size = IntVar()
@@ -26,37 +26,58 @@ class App:
         
         self.sourcefolder = StringVar()
         
-        self.uppersize = StringVar()
-        self.uppersize.set("50")
+        self.uppersize = StringVar(value="50")
+        self.lowersize = StringVar(value="40")
         
-        self.lowersize = StringVar()
-        self.lowersize.set("30")
+        self.foldername = StringVar(value="Custom translation pack")
+        self.error = StringVar(value="")
         
-        self.foldername = StringVar()
-        self.foldername.set("Custom translation pack")
-        self.error = StringVar()
-        self.error.set("")
+        self.cc_step = StringVar(value="2")
+
+        self.cc_offset = IntVar(value=0)
+        self.cc_sat = DoubleVar(value=1.0)
+        self.cc_value = DoubleVar(value=1.0)
         
-        Button (frame, text="Select source Folder", command=pickfoldersource).grid(row=0, column=0)
-        Label (frame, textvariable=self.sourcefolder).grid(row=0, column=1)
+        _row = 0
+        Button (frame, text="Select source Folder", command=pickfoldersource).grid(row=_row, column=0)
+        Label (frame, textvariable=self.sourcefolder).grid(row=_row, column=1)
         
-        Checkbutton (frame, text="Random Colour", variable=self.colour).grid(row=1, column=0)
-        Checkbutton (frame, text="Random Italics", variable=self.italics).grid(row=2, column=0)
-        Checkbutton (frame, text="Random Bolding", variable=self.bold).grid(row=3, column=0)
-        Checkbutton (frame, text="Random Capitals", variable=self.caps).grid(row=4, column=0)
+        _row +=1
+        self.colourmodes = Listbox(frame, height=4)
+        self.colourmodes.insert(1, "None")
+        self.colourmodes.insert(2, "Random")
+        self.colourmodes.insert(3, "Cycle")
+        self.colourmodes.grid(row=_row, column=0)
         
-        Checkbutton (frame, text="Random Sizing", variable=self.size).grid(row=5, column=0)
-        Label (frame, text="Lower size limit").grid(row=6, column=0)
-        Entry (frame, textvariable=self.lowersize).grid(row=6, column=1, sticky="W")
-        Label (frame, text="Upper size limit").grid(row=7, column=0)
-        Entry (frame, textvariable=self.uppersize).grid(row=7, column=1, sticky="W")
+        _row +=1
+        Button (frame, text="Cycle mode options", command=opensettings).grid(row=_row, column=0)
         
+        _row +=1
+        Checkbutton (frame, text="Random Italics", variable=self.italics).grid(row=_row, column=0)
         
-        Label (frame, text="Translations Name").grid(row=8, column=0)
-        Entry (frame, textvariable=self.foldername).grid(row=8, column=1, sticky="W")
+        _row +=1
+        Checkbutton (frame, text="Random Bolding", variable=self.bold).grid(row=_row, column=0)
         
+        _row +=1
+        Checkbutton (frame, text="Random Capitals", variable=self.caps).grid(row=_row, column=0)
         
-        Button (frame, text="Apply", command=Generate).grid(row=9, column=0)
+        _row +=1
+        Checkbutton (frame, text="Random Sizing", variable=self.size).grid(row=_row, column=0)
+        
+        _row +=1
+        Label (frame, text="Lower size limit").grid(row=_row, column=0)
+        Entry (frame, textvariable=self.lowersize).grid(row=_row, column=1, sticky="W")
+        
+        _row +=1
+        Label (frame, text="Upper size limit").grid(row=_row, column=0)
+        Entry (frame, textvariable=self.uppersize).grid(row=_row, column=1, sticky="W")
+        
+        _row +=1        
+        Label (frame, text="Translations Name").grid(row=_row, column=0)
+        Entry (frame, textvariable=self.foldername).grid(row=_row, column=1, sticky="W")
+        
+        _row +=1
+        Button (frame, text="Apply", command=Generate).grid(row=_row, column=0)
         
         Entry (frame, text=self.error)
 
@@ -74,43 +95,39 @@ class MLStripper(HTMLParser):
         return self.text.getvalue()
 
 def strip_tags(html):
-    """
-    Parameters
-    ----------
-    html : str
-        HTML data to get stripped of HTML tags (<> tags)
-
-    Returns
-    -------
-    str
-        DESCRIPTION.
-
-    """
     s = MLStripper()
     s.feed(html)
     return s.get_data()
 
-def get_rand_colour():
-    """
-    Returns
-    -------
-    str
-        String with a random Hue HSV colour
+def loopover(a, b=0, c=359):
+    while a > c: a -= c
+    while a < b: a += c
+    return a
 
-    """
-    
-    return "<color=" + Color(hsv=(r.randint(0, 359), 1, 1)).hex + ">"
+def clamp(a, b=0, c=100):
+    if a < b: return b
+    if a > c: return c
+    return a
+
+def get_rand_colour(): return "<color=" + Color(hsv=(r.randint(0, 359), 1, 1)).hex + ">"
+
+def get_cycle_colour():
+    global cycle
+    cycle += clamp(int(app.cc_step.get()), 1, 100)
+    return "<color=" + Color(hsv=(loopover(cycle), app.cc_sat.get(), app.cc_value.get())).hex + ">"
 
 def rand_formatting(string, args):
-    _colour, _bold, _italics, _caps, _size, _sizeL, _sizeU = args[0], args[1], args[2], args[3], args[4], args[5], args[6]
+    _bold, _italics, _caps, _size, _sizeL, _sizeU = args[0], args[1], args[2], args[3], args[4], args[5]
+
+    if len(args[6]) >=1: _colmode =  args[6][0]
+    else: _colmode = 0
     
     if  round(r.random()) and _caps:
-        if round(r.random()):
-            string = string.upper()
-        else:
-            string = string.lower()
+        if round(r.random()): string = string.upper()
+        else: string = string.lower()
     
-    if _colour: string = get_rand_colour() + string + "</color>"
+    if _colmode==1: string = get_rand_colour() + string + "</color>"
+    if _colmode==2: string = get_cycle_colour() + string + "</color>"
 
     if  round(r.random()) and _bold: string = "<b>" + string + "</b>"
     if  round(r.random()) and _italics: string = "<i>" + string + "</i>"  
@@ -122,7 +139,7 @@ def rand_formatting(string, args):
 def Generate():
     global newfolderpath, rootdir
     try:
-        args = [app.colour.get(), app.bold.get(), app.italics.get(), app.caps.get(), app.size.get(), int(app.lowersize.get()), int(app.uppersize.get())]
+        args = [ app.bold.get(), app.italics.get(), app.caps.get(), app.size.get(), int(app.lowersize.get()), int(app.uppersize.get()), app.colourmodes.curselection()]
         if rootdir and app.foldername.get():
             segs = rootdir.split("/")[0:-1]
             newfolderpath = ""
@@ -134,7 +151,6 @@ def Generate():
             except FileNotFoundError:
                 pass ### The folder doesn't exist. good
             os.makedirs(newfolderpath)
-            
             
             for filename in os.listdir(rootdir):
                 if filename.endswith(".txt") and not filename in blacklisted:
@@ -164,13 +180,9 @@ def Generate():
                                 
                             
                             if not (special_curly or special_square or special_next or special_flop or c == " "):
-                                if not (c=="\n"):
-                                    newfile += rand_formatting(c, args)
-                                else:
-                                    newfile += c
-                            else:
-                                newfile += c
-            
+                                if not (c=="\n"): newfile += rand_formatting(c, args)
+                                else: newfile += c
+                            else: newfile += c
             
                             if special_next:
                                 special_flop = True
@@ -183,7 +195,6 @@ def Generate():
                             _newfile.close()
                 
                 if filename == "manifest.json":
-                    print("json file found")
                     newfile = ""
                     with open(rootdir + "/" + filename, "r") as file:
                         content = file.read()
@@ -209,6 +220,7 @@ def Generate():
   
     except Exception as err:
         print(err)
+        app.error.set(err)
     
    
 def pickfoldersource():
@@ -216,13 +228,30 @@ def pickfoldersource():
     rootdir = (fd.askdirectory(title="Select source Folder"))
     app.sourcefolder.set(rootdir)
     print(rootdir)
-        
 
+def opensettings():
+    ccs = Toplevel(root)
+    ccs.wm_title("Cycle settings")
+    _row = 0
+    Label (ccs, text="Step:").grid(row=_row, column=0)
+    Entry (ccs, textvariable=app.cc_step).grid(row=_row, column=1)
+    
+    _row +=1
+    Scale (ccs, from_=359, to_=0, length=100, resolution=1, variable=app.cc_offset) .grid(row=_row, column=0)
+    Scale (ccs, from_=1, to_=0, length=100, resolution=0.01, variable=app.cc_sat) .grid(row=_row, column=1)
+    Scale (ccs, from_=1, to_=0, length=100, resolution=0.01, variable=app.cc_value) .grid(row=_row, column=2)
+    
+    _row +=1
+    Label (ccs, text="Hue Offset").grid(row=_row, column=0)
+    Label (ccs, text="Saturation").grid(row=_row, column=1)
+    Label (ccs, text="Value").grid(row=_row, column=2)
+    
+    
 root = Tk()
-
-root.event_generate("<<Foo>>", when="tail")
 root.wm_title('SCP:SL Translation modifier')
 app = App(root)
+
+
 
 def on_closing():
     root.destroy()
