@@ -7,7 +7,9 @@ from colorutils import Color
 import random as r
 
 g_done = False
+
 blacklisted = ["Badges.txt", "Items.txt", "InventoryGUI.txt"]
+
 rootdir = ""
 newfolderpath = ""
 cycle = 0
@@ -79,7 +81,6 @@ class App:
         
         Entry (frame, text=self.error)
 
-
 class MLStripper(HTMLParser):
     def __init__(self):
         super().__init__()
@@ -116,6 +117,7 @@ def get_cycle_colour():
 
 def rand_formatting(string, args):
     _bold, _italics, _caps, _size, _sizeL, _sizeU = args[0], args[1], args[2], args[3], args[4], args[5]
+
     if len(args[6]) >=1: _colmode =  args[6][0]
     else: _colmode = 0
     
@@ -200,6 +202,16 @@ def Generate():
                         with open(newfolderpath + "/" + filename, "w") as _newfile:
                             _newfile.write(json.dumps(_jsoncontent))
                             _newfile.close()
+                
+                if filename == "SCP079.txt":
+                    with open(newfolderpath + "/" + filename, "r") as _newfile:
+                        content = _newfile.readlines()
+                        _newfile.close()
+                        with open(newfolderpath + "/" + filename, "w") as _newfile:
+                                newfile = content[0:len(content)-2]
+                                newfile.append("<color=#ff0000>SCPs{0}</color><color=#020040>MTF & Guards{1}</color><color=#fff200>Scientists{2}</color><color=#ff8800>Class-D{3}</color><color=#026900>Chaos Insurgents{4}</color>")
+                                _newfile.writelines(newfile)
+
                 
                 if filename in blacklisted:
                     with open(rootdir + "/" + filename, "r") as file:
