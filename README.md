@@ -22,4 +22,5 @@ step 8: Run SCP: SL.
 step 9: In SCP: SL, under settings/other, change the translations to the folder name you decided prior.
 
 **If the new translations comes up red in the translations list, it will still work. It is simply missing the optional manifest.json file**
-*I no longer have a discord server. 
+
+*I no longer have a discord server.* 
